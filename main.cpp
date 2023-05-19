@@ -18,7 +18,7 @@ int main(int argc, char * argv[])
 
       fb_fix_screeninfo finfo;
       fb_var_screeninfo vinfo;
-      int fbdev = open("/dev/fb0", O_RDWR);
+      int fbdev = open("/dev/fb1", O_RDWR);
       if (!fbdev) {
             printf("error while opening /dev/fb0\n");
             return 1;
@@ -54,15 +54,15 @@ int main(int argc, char * argv[])
                   {
                         unsigned short src_color = *src;
                         src++;
-                        src_color = src_color | (unsigned short)( *src << 8);
+                        src_color = src_color | (unsigned short)(*src << 8);
                         src++;
                         // rgb
                         //dest_color = ((src_color & 0xF800) << 8) |   ((src_color & 0x07E0) << 5) |    ((src_color & 0x001F) << 3);
 
                         // bgr
-                        dest_color = 
+                        dest_color =
                               ((src_color & 0xF800) >> 8) |
-                              ((src_color & 0x07E0) << 5) | 
+                              ((src_color & 0x07E0) << 5) |
                               ((src_color & 0x001F) << 19) |
                               0xFF000000;
                   }
@@ -72,8 +72,8 @@ int main(int argc, char * argv[])
                         src++;
                         dest_color |= *src << 8;
                         src++;
-                        dest_color |= *src ;
-                        src+=2;
+                        dest_color |= *src;
+                        src += 2;
                   }
                   else
                   {
