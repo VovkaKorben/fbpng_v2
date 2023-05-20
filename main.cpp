@@ -7,20 +7,76 @@
 #include "lodepng.h"
 #include<iostream>
 #include<fstream>
+#include <getopt.h>
 
+struct cfg_s
+{
+      int dev{ 0 };
+      int silent{ 0 };
+      char * filename{ NULL };
+      //char * devname{ NULL };
+
+};
+void do_help(const char * programname)
+{
+      printf("Usage: %s [options] filename, where options are:\n", programname);
+      printf("\t[-f X] use specific device /dev/fbX (default /dev/fb0)\n");
+
+
+}
 int main(int argc, char * argv[])
 {
-      if (argc == 1)
+      char devname[16], filename[1024];
+      cfg_s cfg;
+      int opt;
+      while ((opt = getopt(argc, argv, "hf:")) != -1)
       {
-            printf("sprecify png file name to output\n");
-            return 1;
+            switch (opt)
+            {
+                  case '?':
+                  case 'h':
+                  default:
+                        do_help(argv[0]);
+                        return -1;
+                  case 'f':
+                  case 'F':
+                        cfg.dev = atoi(optarg);
+                        break;
+                  case 's':
+                  case 'S':
+                        cfg.silent = 1;
+                        break;
+
+            }
       }
 
+      if (optind < argc)
+      {
+            //printf("Non-option args: ");
+            while (optind < argc)
+            {
+                  strcpy(filename, argv[optind]);
+                  //filename = argv[optind++];
+                  optind++;
+            }
+            //printf("%s ", argv[optind++]);
+      //printf("\n");
+      }
+
+
+      sprintf(devname, "/dev/fb%d", cfg.dev);
+
+      /*if (argc == 1)
+{
+      printf("sprecify png file name to output\n");
+      return 1;
+}
+*/
       fb_fix_screeninfo finfo;
       fb_var_screeninfo vinfo;
-      int fbdev = open("/dev/fb1", O_RDWR);
+      int fbdev = open(devname, O_RDWR);
       if (!fbdev) {
-            printf("error while opening /dev/fb0\n");
+            printf("error while opening %s\n", devname);
             return 1;
       }
 
@@ -37,6 +93,8 @@ int main(int argc, char * argv[])
             printf("mmap failed\n");
             return 1;
       }
+      if (!cfg.silent)
+            printf("%s: %dx%d (%d bpp)\n", devname, vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
       int bpp = vinfo.bits_per_pixel / 8, x_cnt, y_cnt = vinfo.yres;
 
       unsigned char * rgba = new unsigned char[vinfo.xres * vinfo.yres * 4],
@@ -96,19 +154,18 @@ int main(int argc, char * argv[])
       }
 
 
-      //std::ofstream outf("/home/pi/projects/fbpng/test.png", std::ios::out | std::ios::binary);
-      std::ofstream outf(argv[1], std::ios::out | std::ios::binary);
+      std::ofstream outf(filename, std::ios::out | std::ios::binary);
       if (!outf) {
-            printf("Can't open file for writing: %s\n", argv[1]);
+            printf("Can't open file for writing: %s\n", filename);
             return 1;
       }
       outf.write((char *)png_data, png_size);
       outf.close();
       free(png_data);
-      //unsigned error = lodepng_encode32( decode_m(&ttt, &w, &h, (puint8)inp_data, inp_isize);
 
 
       close(fbdev);
-      printf("PNG file created: %s\n", argv[1]);
+      if (!cfg.silent)
+            printf("PNG file created: %s\n", filename);
       return 0;
 }
